@@ -3,6 +3,75 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const signupContainer = document.getElementById("signup-container");
+  const loginButton = document.getElementById("login-button");
+  const loginModal = document.getElementById("login-modal");
+  const loginForm = document.getElementById("login-form");
+  const closeLogin = document.getElementById("close-login");
+  let authToken = sessionStorage.getItem("teacherToken");
+  let username = sessionStorage.getItem("teacherUsername");
+
+  function setTeacherMode(isLoggedIn) {
+    signupContainer.classList.toggle("hidden", !isLoggedIn);
+    loginButton.textContent = isLoggedIn
+      ? `👤 ${username} (Logout)`
+      : "👤 Teacher Login";
+  }
+
+  function authHeaders() {
+    return authToken ? { Authorization: `Bearer ${authToken}` } : {};
+  }
+
+  loginButton.addEventListener("click", async () => {
+    if (authToken) {
+      await fetch("/logout", {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      authToken = null;
+      username = null;
+      sessionStorage.removeItem("teacherToken");
+      sessionStorage.removeItem("teacherUsername");
+      setTeacherMode(false);
+      fetchActivities();
+      return;
+    }
+    loginModal.classList.remove("hidden");
+  });
+
+  closeLogin.addEventListener("click", () => {
+    loginModal.classList.add("hidden");
+  });
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const loginUsername = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      const response = await fetch(
+        `/login?username=${encodeURIComponent(loginUsername)}&password=${encodeURIComponent(password)}`,
+        { method: "POST" }
+      );
+      const result = await response.json();
+
+      if (response.ok) {
+        authToken = result.token;
+        username = result.username;
+        sessionStorage.setItem("teacherToken", authToken);
+        sessionStorage.setItem("teacherUsername", username);
+        loginModal.classList.add("hidden");
+        loginForm.reset();
+        setTeacherMode(true);
+        fetchActivities();
+      } else {
+        alert(result.detail || "Login failed");
+      }
+    } catch (error) {
+      alert("Unable to log in. Please try again.");
+      console.error("Error logging in:", error);
+    }
+  });
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -12,6 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML =
+        '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -30,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${email}</span>${authToken ? `<button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button>` : ""}</li>`
                   )
                   .join("")}
               </ul>
@@ -80,6 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/unregister?email=${encodeURIComponent(email)}`,
         {
           method: "DELETE",
+          headers: authHeaders(),
         }
       );
 
@@ -124,6 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
+          headers: authHeaders(),
         }
       );
 
@@ -156,5 +229,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Initialize app
+  setTeacherMode(Boolean(authToken));
   fetchActivities();
 });
