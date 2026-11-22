@@ -22,6 +22,20 @@ header {
   background-color: #1a237e;
   color: white;
   border-radius: 5px;
+  position: relative;
+}
+
+.login-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: white;
+  color: #1a237e;
+  font-size: 14px;
+}
+
+.login-button:hover {
+  background-color: #e8eaf6;
 }
 
 header h1 {
@@ -190,6 +204,39 @@ button:hover {
 
 .hidden {
   display: none;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.secondary-button {
+  background-color: #666;
 }
 
 footer {
